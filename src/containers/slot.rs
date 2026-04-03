@@ -20,6 +20,8 @@ impl Slot for u64 {
             // For pronic delta = n(n+1), we have:
             //   4 * delta +1 = 4 * n(n+1) + 1 = (2n + 1)^2
             // So we check that 4 * delta + 1 is an odd perfect square
-            || ((4 * delta + 1).isqrt().pow(2) == 4 * delta + 1 && (4 * delta + 1).isqrt() % 2 == 1)
+            || delta.checked_mul(4)
+                .and_then(|v| v.checked_add(1))
+                .is_some_and(|v| v.isqrt().pow(2) == v && v.isqrt() % 2 == 1)
     }
 }

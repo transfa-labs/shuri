@@ -216,14 +216,10 @@ impl State {
         let validator_count = self.validators.len();
         for (i, root) in self.justification_roots.iter().enumerate() {
             let start = i * validator_count;
-            let votes = self
-                .justification_validators
-                .as_bytes()
-                .iter()
-                .skip(start)
-                .take(validator_count)
-                .map(|bit| *bit != 0)
-                .collect();
+            let end = (i + 1) * validator_count;
+            let votes = (start..end).map(|idx| {
+                self.justification_validators.get(idx) == Some(true)
+            }).collect();
             justifications.insert(*root, votes);
         }
 
@@ -246,7 +242,7 @@ impl State {
                 || Some(&source.root) != self.historical_block_hashes.get(source.slot as usize)
 
                 // Target root must match the state's historical block hashes
-                || Some(&target.root) != self.historical_block_hashes.get(source.slot as usize)
+                || Some(&target.root) != self.historical_block_hashes.get(target.slot as usize)
 
                 // Target slot must be after the source slot
                 || target.slot <= source.slot
