@@ -1,7 +1,7 @@
 use libssz_derive::{HashTreeRoot, SszDecode, SszEncode};
 
 /// Represents a checkpoint in the chain's history.
-#[derive(SszDecode, SszEncode, HashTreeRoot)]
+#[derive(SszDecode, SszEncode, HashTreeRoot, Clone, Default)]
 pub struct Checkpoint {
     /// The slot number of the checkpoint's block.
     pub slot: u64,

@@ -4,15 +4,17 @@ use libssz_types::SszList;
 use crate::chain::config::VALIDATOR_REGISTRY_LIMIT;
 use crate::containers::attestation::{Attestation, Signature};
 
+pub type AttestationList = SszList<Attestation, VALIDATOR_REGISTRY_LIMIT>;
+
 /// The body of a block, containing payload data.
-#[derive(SszEncode, SszDecode, HashTreeRoot)]
+#[derive(SszEncode, SszDecode, HashTreeRoot, Default)]
 pub struct BlockBody {
     /// Plain validator attestations carried in the block body.
-    attestations: SszList<Attestation, VALIDATOR_REGISTRY_LIMIT>,
+    pub attestations: AttestationList,
 }
 
 /// The header of a block, containing metadata.
-#[derive(SszEncode, SszDecode, HashTreeRoot)]
+#[derive(SszEncode, SszDecode, HashTreeRoot, Default)]
 pub struct BlockHeader {
     /// The slot in which the block was proposed.
     pub slot: u64,
