@@ -231,31 +231,30 @@ impl State {
             let source = &attestation.data.source;
             let target = &attestation.data.target;
 
-            // We ignore attestations whose is not already justified,
+            // We ignore attestations whose source is not already justified,
             // or whose target is not in the history, or whose target is
             // not a valid justifiable slot.
 
-            if self.justified_slots.get(source.slot as usize) != Some(true) {
-                continue;
-            }
+            let should_skip =
+                // Source slot must be justified
+                self.justified_slots.get(source.slot as usize) != Some(true)
+                
+                // Target slot must not be already justified
+                || self.justified_slots.get(target.slot as usize) == Some(true)
+                
+                // Source root must match the state's historical block hashes
+                || Some(&source.root) != self.historical_block_hashes.get(source.slot as usize)
 
-            if self.justified_slots.get(target.slot as usize) == Some(true) {
-                continue;
-            }
+                // Target root must match the state's historical block hashes
+                || Some(&target.root) != self.historical_block_hashes.get(source.slot as usize)
 
-            if Some(&source.root) != self.historical_block_hashes.get(source.slot as usize) {
-                continue;
-            }
+                // Target slot must be after the source slot
+                || target.slot <= source.slot
 
-            if Some(&target.root) != self.historical_block_hashes.get(source.slot as usize) {
-                continue;
-            }
+                // Target slot must be justifiable after the latest finalized slot
+                || !target.slot.is_justifiable_after(self.latest_finalized.slot);
 
-            if target.slot <= source.slot {
-                continue;
-            }
-
-            if !target.slot.is_justifiable_after(self.latest_finalized.slot) {
+            if should_skip {
                 continue;
             }
 
@@ -272,6 +271,7 @@ impl State {
                 }
                 justification[validator_id] = true;
             }
+
             let count = justification.iter().filter(|i| **i).count();
 
             if 3 * count >= 2 * validator_count {
@@ -280,6 +280,7 @@ impl State {
                     .set(target.slot as usize, true)
                     .map_err(Error::InvalidIndex)?;
                 justifications.remove(&target.root);
+
                 // Finalization: if the target is the next valid justifiable hash
                 // after the source
                 if !(source.slot + 1..target.slot)
@@ -310,7 +311,7 @@ impl State {
     /// 1. Validate signatures if required
     /// 2. Process slots up to the block's slot
     /// 3. Process the block header and body
-    /// 4. Validate the compute state root
+    /// 4. Validate the computed state root
     pub fn state_transition(&mut self, block: &Block) -> Result<(), Error> {
         self.process_slots(block.slot)?;
         self.process_block(block)?;
