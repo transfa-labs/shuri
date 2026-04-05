@@ -94,33 +94,6 @@ pub struct InfoSpec {
     pub fixture_format: String,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct BlockSpec {
-    pub slot: u64,
-    pub proposer_index: u64,
-    pub parent_root: HexBytes<32>,
-    pub state_root: HexBytes<32>,
-    pub body: BlockBodySpec,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct BlockBodySpec {
-    pub attestations: Vec<AttestationSpec>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct AttestationSpec {
-    pub validator_id: u64,
-    pub data: AttestationDataSpec,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct AttestationDataSpec {
-    pub slot: u64,
-    pub head: CheckpointSpec,
-    pub target: CheckpointSpec,
-    pub source: CheckpointSpec,
-}
 
 #[derive(Serialize, Deserialize)]
 pub enum FixtureFormat {

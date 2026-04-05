@@ -3,7 +3,7 @@ use std::ops::Deref;
 use hex::{FromHex, FromHexError, ToHex};
 use serde::{Deserialize, Serialize, de};
 
-pub struct HexBytes<const N: usize>([u8; N]);
+pub struct HexBytes<const N: usize>(pub [u8; N]);
 
 impl<const N: usize> Deref for HexBytes<N> {
     type Target = [u8; N];
