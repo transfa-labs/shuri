@@ -1,0 +1,196 @@
+{
+    "tests/consensus/devnet/fc/test_attestation_target_selection.py::test_attestation_target_with_slot_gaps[fork_Devnet][fork_devnet-fork_choice_test]": {
+        "network": "Devnet",
+        "anchorState": {
+            "config": {
+                "genesisTime": 0
+            },
+            "slot": 0,
+            "latestBlockHeader": {
+                "slot": 0,
+                "proposerIndex": 0,
+                "parentRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "stateRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "bodyRoot": "0xdba9671bac9513c9482f1416a53aabd2c6ce90d5a5f865ce5a55c775325c9136"
+            },
+            "latestJustified": {
+                "root": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "slot": 0
+            },
+            "latestFinalized": {
+                "root": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "slot": 0
+            },
+            "historicalBlockHashes": {
+                "data": []
+            },
+            "justifiedSlots": {
+                "data": []
+            },
+            "validators": {
+                "data": [
+                    {
+                        "pubkey": "0x75a39f7b9b5de948691ba524ccc6be401b40f96732dcce178027b463ec87c4320555921e2840663704a9c70fbc200d4ee02d1a5b",
+                        "index": 0
+                    },
+                    {
+                        "pubkey": "0x6e85bc03b1fcd71505f3f0321162be5e3ee97e5f02199a03b68a54751a85bb2b80df1f0db9f3442dab92a07b181f5507e9e6ee74",
+                        "index": 0
+                    },
+                    {
+                        "pubkey": "0x57bf2b5be6846d74d33a7260edfc7914fb3ed044fad14b28ba4e3c3906c9951d0b7044557974752ab902547e64939716651a0474",
+                        "index": 0
+                    },
+                    {
+                        "pubkey": "0x9979ae7ba5f2df317be34d1e604cd133f436e924513576705a1ff50a26650c00b268506e210ff90704b3083ac4dec04c15a93d72",
+                        "index": 0
+                    }
+                ]
+            },
+            "justificationsRoots": {
+                "data": []
+            },
+            "justificationsValidators": {
+                "data": []
+            }
+        },
+        "anchorBlock": {
+            "slot": 0,
+            "proposerIndex": 0,
+            "parentRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "stateRoot": "0xf6b5c8fc0773594dad8940377ceb73aa951e4c0414799c2861518e445fdea110",
+            "body": {
+                "attestations": {
+                    "data": []
+                }
+            }
+        },
+        "steps": [
+            {
+                "valid": true,
+                "checks": {
+                    "headSlot": 1,
+                    "attestationTargetSlot": 0
+                },
+                "stepType": "block",
+                "block": {
+                    "block": {
+                        "slot": 1,
+                        "proposerIndex": 1,
+                        "parentRoot": "0x3aa04e6cd8bc5dfede0dba2d761a4a0469a6eb7a7bd7a5d7be210cae4b6cc650",
+                        "stateRoot": "0xea9a7ded0e094835d0fb57cbed4d3482550b0a09293a8f5588bc3bd067927208",
+                        "body": {
+                            "attestations": {
+                                "data": []
+                            }
+                        }
+                    },
+                    "proposerAttestation": {
+                        "validatorId": 1,
+                        "data": {
+                            "slot": 1,
+                            "head": {
+                                "root": "0x736b62da50cc3d709c8dd301cc7f90da813206b228eccb2e3adb52b0a5d7d1ec",
+                                "slot": 1
+                            },
+                            "target": {
+                                "root": "0x736b62da50cc3d709c8dd301cc7f90da813206b228eccb2e3adb52b0a5d7d1ec",
+                                "slot": 1
+                            },
+                            "source": {
+                                "root": "0x3aa04e6cd8bc5dfede0dba2d761a4a0469a6eb7a7bd7a5d7be210cae4b6cc650",
+                                "slot": 0
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "valid": true,
+                "checks": {
+                    "headSlot": 3,
+                    "attestationTargetSlot": 0
+                },
+                "stepType": "block",
+                "block": {
+                    "block": {
+                        "slot": 3,
+                        "proposerIndex": 3,
+                        "parentRoot": "0x736b62da50cc3d709c8dd301cc7f90da813206b228eccb2e3adb52b0a5d7d1ec",
+                        "stateRoot": "0x09821f56efbd9cfca242faddd92cd9ccb2af5d1c4da00ce93d6096654c80a03a",
+                        "body": {
+                            "attestations": {
+                                "data": []
+                            }
+                        }
+                    },
+                    "proposerAttestation": {
+                        "validatorId": 3,
+                        "data": {
+                            "slot": 3,
+                            "head": {
+                                "root": "0x6533b9bb95c8347f5a8eb892dacbd258e436444e89fa0340d29e2c6950314d45",
+                                "slot": 3
+                            },
+                            "target": {
+                                "root": "0x6533b9bb95c8347f5a8eb892dacbd258e436444e89fa0340d29e2c6950314d45",
+                                "slot": 3
+                            },
+                            "source": {
+                                "root": "0x736b62da50cc3d709c8dd301cc7f90da813206b228eccb2e3adb52b0a5d7d1ec",
+                                "slot": 1
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "valid": true,
+                "checks": {
+                    "headSlot": 5,
+                    "attestationTargetSlot": 0
+                },
+                "stepType": "block",
+                "block": {
+                    "block": {
+                        "slot": 5,
+                        "proposerIndex": 1,
+                        "parentRoot": "0x6533b9bb95c8347f5a8eb892dacbd258e436444e89fa0340d29e2c6950314d45",
+                        "stateRoot": "0xb5b01c08faa97d0ac3b7339e0e8754d0ec5faffc4eea577eddf8b2295d7b220b",
+                        "body": {
+                            "attestations": {
+                                "data": []
+                            }
+                        }
+                    },
+                    "proposerAttestation": {
+                        "validatorId": 1,
+                        "data": {
+                            "slot": 5,
+                            "head": {
+                                "root": "0xc863bab45906a871adcd4b9f140d0fea4b1174cd394360c01b872c20a4adb5e3",
+                                "slot": 5
+                            },
+                            "target": {
+                                "root": "0xc863bab45906a871adcd4b9f140d0fea4b1174cd394360c01b872c20a4adb5e3",
+                                "slot": 5
+                            },
+                            "source": {
+                                "root": "0x6533b9bb95c8347f5a8eb892dacbd258e436444e89fa0340d29e2c6950314d45",
+                                "slot": 3
+                            }
+                        }
+                    }
+                }
+            }
+        ],
+        "maxSlot": 5,
+        "_info": {
+            "hash": "0xf848e7bf18176fd567c528b75f40b5d0eaf9c1d0f615c4fa7049a11d4d987c5f",
+            "comment": "`leanSpec` generated test",
+            "testId": "tests/consensus/devnet/fc/test_attestation_target_selection.py::test_attestation_target_with_slot_gaps[fork_Devnet]",
+            "description": "Attestation target handles missed slots correctly.\n\nScenario\n--------\nProcess blocks at slots 1, 3, 5 (skipping even slots).\n\nExpected:\n    - Targets advance despite gaps\n    - Targets remain justifiable\n    - Safe target stays valid\n\nWhy This Matters\n----------------\nMissed slots are common when proposers fail or network partitions occur.\n\nThe target selection must handle sparse block production gracefully,\nensuring validators can still make progress even with gaps in the chain.",
+            "fixtureFormat": "fork_choice_test"
+        }
+    }
+}

@@ -1,0 +1,269 @@
+{
+    "tests/consensus/devnet/fc/test_fork_choice_head.py::test_head_with_gaps_in_slots[fork_Devnet][fork_devnet-fork_choice_test]": {
+        "network": "Devnet",
+        "anchorState": {
+            "config": {
+                "genesisTime": 0
+            },
+            "slot": 0,
+            "latestBlockHeader": {
+                "slot": 0,
+                "proposerIndex": 0,
+                "parentRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "stateRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "bodyRoot": "0xdba9671bac9513c9482f1416a53aabd2c6ce90d5a5f865ce5a55c775325c9136"
+            },
+            "latestJustified": {
+                "root": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "slot": 0
+            },
+            "latestFinalized": {
+                "root": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "slot": 0
+            },
+            "historicalBlockHashes": {
+                "data": []
+            },
+            "justifiedSlots": {
+                "data": []
+            },
+            "validators": {
+                "data": [
+                    {
+                        "pubkey": "0x14086e0be5f89b794ee5fb202ffa6746dba70e3e28eda3670885453cd7ff35420da3aa458e4a12391772844c4409f10d1beddc4f",
+                        "index": 0
+                    },
+                    {
+                        "pubkey": "0x98619c6c2f3d1708f8fe257795fab46899cec678bd785d647e8e7f517fa21b3c1a9a89486b18f14a9b8e3b6e31b69031adae8a15",
+                        "index": 0
+                    },
+                    {
+                        "pubkey": "0x7979656f30f80016325f8053644205749cb53e57086c543303956b3b8a753960f7313f022fdf95679628873e2081296284bb300c",
+                        "index": 0
+                    },
+                    {
+                        "pubkey": "0x7c26ab0903466e53ac3b59439da91f0c1a57592683f83e35003eb334b90bb93f344dbf683e295e584825ff49ff2559081b212033",
+                        "index": 0
+                    }
+                ]
+            },
+            "justificationsRoots": {
+                "data": []
+            },
+            "justificationsValidators": {
+                "data": []
+            }
+        },
+        "anchorBlock": {
+            "slot": 0,
+            "proposerIndex": 0,
+            "parentRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "stateRoot": "0xa4afd87796dcc4f998dd0c0ec855ebf8b9f37fa94e95ecbfd7261df4c555cc48",
+            "body": {
+                "attestations": {
+                    "data": []
+                }
+            }
+        },
+        "steps": [
+            {
+                "valid": true,
+                "checks": {
+                    "headSlot": 1
+                },
+                "stepType": "block",
+                "block": {
+                    "block": {
+                        "slot": 1,
+                        "proposerIndex": 1,
+                        "parentRoot": "0xf66ba56907f52839ec3d14d08413dc438ecf4d20d72d07ef3aebdbf6de58ed4b",
+                        "stateRoot": "0x7694e5d476f1f9ae8c30a41e75f9b6876944a964f7200b09d83be2aca5af5437",
+                        "body": {
+                            "attestations": {
+                                "data": []
+                            }
+                        }
+                    },
+                    "proposerAttestation": {
+                        "validatorId": 1,
+                        "data": {
+                            "slot": 1,
+                            "head": {
+                                "root": "0x968b9b162945a7fd4eb608beade2ffb7e6dae9131a7320e239c2074c8a4d92d3",
+                                "slot": 1
+                            },
+                            "target": {
+                                "root": "0x968b9b162945a7fd4eb608beade2ffb7e6dae9131a7320e239c2074c8a4d92d3",
+                                "slot": 1
+                            },
+                            "source": {
+                                "root": "0xf66ba56907f52839ec3d14d08413dc438ecf4d20d72d07ef3aebdbf6de58ed4b",
+                                "slot": 0
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "valid": true,
+                "checks": {
+                    "headSlot": 3
+                },
+                "stepType": "block",
+                "block": {
+                    "block": {
+                        "slot": 3,
+                        "proposerIndex": 3,
+                        "parentRoot": "0x968b9b162945a7fd4eb608beade2ffb7e6dae9131a7320e239c2074c8a4d92d3",
+                        "stateRoot": "0x6257f271229053ee28c45f5d537880b704d5793df3ff488439c0aa7a2975f7bc",
+                        "body": {
+                            "attestations": {
+                                "data": []
+                            }
+                        }
+                    },
+                    "proposerAttestation": {
+                        "validatorId": 3,
+                        "data": {
+                            "slot": 3,
+                            "head": {
+                                "root": "0xb01ba6e13a3041a4a98bab2f7c7c001d8782dc810bf8258c5211bbc3e0239688",
+                                "slot": 3
+                            },
+                            "target": {
+                                "root": "0xb01ba6e13a3041a4a98bab2f7c7c001d8782dc810bf8258c5211bbc3e0239688",
+                                "slot": 3
+                            },
+                            "source": {
+                                "root": "0x968b9b162945a7fd4eb608beade2ffb7e6dae9131a7320e239c2074c8a4d92d3",
+                                "slot": 1
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "valid": true,
+                "checks": {
+                    "headSlot": 5
+                },
+                "stepType": "block",
+                "block": {
+                    "block": {
+                        "slot": 5,
+                        "proposerIndex": 1,
+                        "parentRoot": "0xb01ba6e13a3041a4a98bab2f7c7c001d8782dc810bf8258c5211bbc3e0239688",
+                        "stateRoot": "0x322d0e5376b24c93602a903d9a65c605e4ba008248a04ff2b58c4baba13f93c6",
+                        "body": {
+                            "attestations": {
+                                "data": []
+                            }
+                        }
+                    },
+                    "proposerAttestation": {
+                        "validatorId": 1,
+                        "data": {
+                            "slot": 5,
+                            "head": {
+                                "root": "0xbee991a2933059bc681446acbd359ed1b4ef49fdfe665229eac42b67506d48a1",
+                                "slot": 5
+                            },
+                            "target": {
+                                "root": "0xbee991a2933059bc681446acbd359ed1b4ef49fdfe665229eac42b67506d48a1",
+                                "slot": 5
+                            },
+                            "source": {
+                                "root": "0xb01ba6e13a3041a4a98bab2f7c7c001d8782dc810bf8258c5211bbc3e0239688",
+                                "slot": 3
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "valid": true,
+                "checks": {
+                    "headSlot": 7
+                },
+                "stepType": "block",
+                "block": {
+                    "block": {
+                        "slot": 7,
+                        "proposerIndex": 3,
+                        "parentRoot": "0xbee991a2933059bc681446acbd359ed1b4ef49fdfe665229eac42b67506d48a1",
+                        "stateRoot": "0xd26ad8f26fe92f807c5d9e971ea78ff932108359b3568d827a70939651d5c6fe",
+                        "body": {
+                            "attestations": {
+                                "data": []
+                            }
+                        }
+                    },
+                    "proposerAttestation": {
+                        "validatorId": 3,
+                        "data": {
+                            "slot": 7,
+                            "head": {
+                                "root": "0x278f142d158e152f2896507e7454b62c1ddcb73a18a56f14dd2fce7608671b2c",
+                                "slot": 7
+                            },
+                            "target": {
+                                "root": "0x278f142d158e152f2896507e7454b62c1ddcb73a18a56f14dd2fce7608671b2c",
+                                "slot": 7
+                            },
+                            "source": {
+                                "root": "0xbee991a2933059bc681446acbd359ed1b4ef49fdfe665229eac42b67506d48a1",
+                                "slot": 5
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "valid": true,
+                "checks": {
+                    "headSlot": 9
+                },
+                "stepType": "block",
+                "block": {
+                    "block": {
+                        "slot": 9,
+                        "proposerIndex": 1,
+                        "parentRoot": "0x278f142d158e152f2896507e7454b62c1ddcb73a18a56f14dd2fce7608671b2c",
+                        "stateRoot": "0xe8c517c60ecff1184a57f94893e89fa849fd0a82264d9af27e56f1609f5071da",
+                        "body": {
+                            "attestations": {
+                                "data": []
+                            }
+                        }
+                    },
+                    "proposerAttestation": {
+                        "validatorId": 1,
+                        "data": {
+                            "slot": 9,
+                            "head": {
+                                "root": "0xd248d2c9528aec343d6a310e1ef4afd404b5463687aa72e029ddb8b11ea887af",
+                                "slot": 9
+                            },
+                            "target": {
+                                "root": "0xd248d2c9528aec343d6a310e1ef4afd404b5463687aa72e029ddb8b11ea887af",
+                                "slot": 9
+                            },
+                            "source": {
+                                "root": "0x278f142d158e152f2896507e7454b62c1ddcb73a18a56f14dd2fce7608671b2c",
+                                "slot": 7
+                            }
+                        }
+                    }
+                }
+            }
+        ],
+        "maxSlot": 9,
+        "_info": {
+            "hash": "0xf1e18342abb6ed0170877e88ea18e26996390ec05d0bf9c9eb78260e69775803",
+            "comment": "`leanSpec` generated test",
+            "testId": "tests/consensus/devnet/fc/test_fork_choice_head.py::test_head_with_gaps_in_slots[fork_Devnet]",
+            "description": "Fork choice head handles missing slots correctly.\n\nScenario\n--------\nBuild blocks at slots 1, 3, 5, 7, 9 (skipping even slots).\n\nExpected Behavior:\n    - Head advances to each present block\n    - Skipped slots don't affect fork choice\n    - Head correctly identifies the leaf despite gaps\n\nWhy This Matters\n----------------\nMissed slots are common in production:\n- Offline proposers\n- Network partitions\n- Proposer failures\n\nFork choice must handle sparse block production correctly. The algorithm\ndoesn't require consecutive slots - it works with any tree structure where\ngaps are simply missing nodes.\n\nThis verifies the algorithm handles real-world conditions where not every\nslot has a block, which is the norm rather than the exception.",
+            "fixtureFormat": "fork_choice_test"
+        }
+    }
+}

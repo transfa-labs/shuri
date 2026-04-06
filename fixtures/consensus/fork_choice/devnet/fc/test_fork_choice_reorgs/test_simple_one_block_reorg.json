@@ -1,0 +1,239 @@
+{
+    "tests/consensus/devnet/fc/test_fork_choice_reorgs.py::test_simple_one_block_reorg[fork_Devnet][fork_devnet-fork_choice_test]": {
+        "network": "Devnet",
+        "anchorState": {
+            "config": {
+                "genesisTime": 0
+            },
+            "slot": 0,
+            "latestBlockHeader": {
+                "slot": 0,
+                "proposerIndex": 0,
+                "parentRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "stateRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "bodyRoot": "0xdba9671bac9513c9482f1416a53aabd2c6ce90d5a5f865ce5a55c775325c9136"
+            },
+            "latestJustified": {
+                "root": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "slot": 0
+            },
+            "latestFinalized": {
+                "root": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "slot": 0
+            },
+            "historicalBlockHashes": {
+                "data": []
+            },
+            "justifiedSlots": {
+                "data": []
+            },
+            "validators": {
+                "data": [
+                    {
+                        "pubkey": "0x02abe46347d7f0220fcd157e1d62a640aa647c3cc5e45b5e59ea0a66abf1b24124e7f4165baf3048a78c07659587421efff99b28",
+                        "index": 0
+                    },
+                    {
+                        "pubkey": "0x990cda7b4409621074fb546b05f0e709707f0c0bfbbb935c5471b30041878b1b4925b918d4e56b7a9c4cff068739a0599e564c37",
+                        "index": 0
+                    },
+                    {
+                        "pubkey": "0xe6d6bd49d6231c031fcea219a7dd5c056a3ccd0bd179a57452ffb4592af1c974059b876479502d52fbf01554d184b74378a18d25",
+                        "index": 0
+                    },
+                    {
+                        "pubkey": "0x8af878647634f80fa5efb138e9c2a635a7cce00061f52b6a8850723e52819979ae0e3070bb5d431e4ab5ca1a3e7a983c1892ec46",
+                        "index": 0
+                    }
+                ]
+            },
+            "justificationsRoots": {
+                "data": []
+            },
+            "justificationsValidators": {
+                "data": []
+            }
+        },
+        "anchorBlock": {
+            "slot": 0,
+            "proposerIndex": 0,
+            "parentRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "stateRoot": "0xe1fb9a21cd17a30c840557a838afd2ad43b0026b83a9ec71971c8eab321701cb",
+            "body": {
+                "attestations": {
+                    "data": []
+                }
+            }
+        },
+        "steps": [
+            {
+                "valid": true,
+                "checks": {
+                    "headSlot": 1,
+                    "headRoot": "0xf3d97241a30d2c45efb28fd740144d966e8cd06397615bcdb7c6ab4dc02bb7a9",
+                    "headRootLabel": "chain_base"
+                },
+                "stepType": "block",
+                "block": {
+                    "block": {
+                        "slot": 1,
+                        "proposerIndex": 1,
+                        "parentRoot": "0xf408e0056a0847e98482f2d985b5bfaf404845c7615dea173718fabe4aa1242a",
+                        "stateRoot": "0x21260632f21dd92979ec85d6e1ae878d267a8afd598b78886e1463013d82254d",
+                        "body": {
+                            "attestations": {
+                                "data": []
+                            }
+                        }
+                    },
+                    "proposerAttestation": {
+                        "validatorId": 1,
+                        "data": {
+                            "slot": 1,
+                            "head": {
+                                "root": "0xf3d97241a30d2c45efb28fd740144d966e8cd06397615bcdb7c6ab4dc02bb7a9",
+                                "slot": 1
+                            },
+                            "target": {
+                                "root": "0xf3d97241a30d2c45efb28fd740144d966e8cd06397615bcdb7c6ab4dc02bb7a9",
+                                "slot": 1
+                            },
+                            "source": {
+                                "root": "0xf408e0056a0847e98482f2d985b5bfaf404845c7615dea173718fabe4aa1242a",
+                                "slot": 0
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "valid": true,
+                "checks": {
+                    "headSlot": 2,
+                    "headRoot": "0xe6d0d3d2b3f53844676425d169bbd297ca148d5efb57a68763b77e599685921e",
+                    "headRootLabel": "fork_a_2"
+                },
+                "stepType": "block",
+                "block": {
+                    "block": {
+                        "slot": 2,
+                        "proposerIndex": 2,
+                        "parentRoot": "0xf3d97241a30d2c45efb28fd740144d966e8cd06397615bcdb7c6ab4dc02bb7a9",
+                        "stateRoot": "0xbaf7d146fa10b3e2984856104075b6bb25efe16f029fe857a694f07b6ecf2035",
+                        "body": {
+                            "attestations": {
+                                "data": []
+                            }
+                        }
+                    },
+                    "proposerAttestation": {
+                        "validatorId": 2,
+                        "data": {
+                            "slot": 2,
+                            "head": {
+                                "root": "0xe6d0d3d2b3f53844676425d169bbd297ca148d5efb57a68763b77e599685921e",
+                                "slot": 2
+                            },
+                            "target": {
+                                "root": "0xe6d0d3d2b3f53844676425d169bbd297ca148d5efb57a68763b77e599685921e",
+                                "slot": 2
+                            },
+                            "source": {
+                                "root": "0xf3d97241a30d2c45efb28fd740144d966e8cd06397615bcdb7c6ab4dc02bb7a9",
+                                "slot": 1
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "valid": true,
+                "checks": {
+                    "headSlot": 2,
+                    "headRoot": "0xe6d0d3d2b3f53844676425d169bbd297ca148d5efb57a68763b77e599685921e",
+                    "headRootLabel": "fork_a_2"
+                },
+                "stepType": "block",
+                "block": {
+                    "block": {
+                        "slot": 2,
+                        "proposerIndex": 2,
+                        "parentRoot": "0xf3d97241a30d2c45efb28fd740144d966e8cd06397615bcdb7c6ab4dc02bb7a9",
+                        "stateRoot": "0xbaf7d146fa10b3e2984856104075b6bb25efe16f029fe857a694f07b6ecf2035",
+                        "body": {
+                            "attestations": {
+                                "data": []
+                            }
+                        }
+                    },
+                    "proposerAttestation": {
+                        "validatorId": 2,
+                        "data": {
+                            "slot": 2,
+                            "head": {
+                                "root": "0xe6d0d3d2b3f53844676425d169bbd297ca148d5efb57a68763b77e599685921e",
+                                "slot": 2
+                            },
+                            "target": {
+                                "root": "0xe6d0d3d2b3f53844676425d169bbd297ca148d5efb57a68763b77e599685921e",
+                                "slot": 2
+                            },
+                            "source": {
+                                "root": "0xf3d97241a30d2c45efb28fd740144d966e8cd06397615bcdb7c6ab4dc02bb7a9",
+                                "slot": 1
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "valid": true,
+                "checks": {
+                    "headSlot": 3,
+                    "headRoot": "0x393469a7b03fac3d697d604836f183b2dd881aee9d0ccf036c883df5d1a93206",
+                    "headRootLabel": "fork_b_3"
+                },
+                "stepType": "block",
+                "block": {
+                    "block": {
+                        "slot": 3,
+                        "proposerIndex": 3,
+                        "parentRoot": "0xe6d0d3d2b3f53844676425d169bbd297ca148d5efb57a68763b77e599685921e",
+                        "stateRoot": "0xbcc833387ab6dfcbbb049b318448d2020990610a5752d61f67f95d4f1978f6a2",
+                        "body": {
+                            "attestations": {
+                                "data": []
+                            }
+                        }
+                    },
+                    "proposerAttestation": {
+                        "validatorId": 3,
+                        "data": {
+                            "slot": 3,
+                            "head": {
+                                "root": "0x393469a7b03fac3d697d604836f183b2dd881aee9d0ccf036c883df5d1a93206",
+                                "slot": 3
+                            },
+                            "target": {
+                                "root": "0x393469a7b03fac3d697d604836f183b2dd881aee9d0ccf036c883df5d1a93206",
+                                "slot": 3
+                            },
+                            "source": {
+                                "root": "0xe6d0d3d2b3f53844676425d169bbd297ca148d5efb57a68763b77e599685921e",
+                                "slot": 2
+                            }
+                        }
+                    }
+                }
+            }
+        ],
+        "maxSlot": 3,
+        "_info": {
+            "hash": "0xeceb69439402b0666707867dba8f26db89e8f04af6cf41bfe82a74122ec73f9c",
+            "comment": "`leanSpec` generated test",
+            "testId": "tests/consensus/devnet/fc/test_fork_choice_reorgs.py::test_simple_one_block_reorg[fork_Devnet]",
+            "description": "Simplest reorg: one-block fork overtakes another via extension.\n\nScenario\n--------\n- Slot 1: Common ancestor (chain_base)\n- Slot 2: Fork A created, becomes head\n- Slot 2: Fork B created (competing fork at same slot)\n- Slot 3: Fork B extended \u2192 triggers reorg from A to B\n\nExpected Behavior\n-----------------\n1. After fork_a_2: head = fork_a_2 (first fork created)\n2. After fork_b_2: head = fork_a_2 (equal weight, head remains unchanged)\n3. After fork_b_3: head = fork_b_3 (fork B heavier due to extension)\n\nReorg Details:\n    - **Depth**: 1 block (fork_a_2 becomes non-canonical)\n    - **Trigger**: Fork extension (proposer attestation)\n    - **Weight advantage**: Fork B has 2 proposer attestations vs 1\n\nWhy This Matters\n----------------\nThis is the most common reorg scenario in practice:\n- Two blocks proposed at nearly the same time\n- Network temporarily splits (half see A first, half see B first)\n- Next proposer builds on one fork, resolving the split\n- Fork choice converges to the extended fork\n\nTests the fundamental property: extending a fork makes it heavier.",
+            "fixtureFormat": "fork_choice_test"
+        }
+    }
+}
