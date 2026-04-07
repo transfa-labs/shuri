@@ -7,19 +7,19 @@ use crate::containers::attestation::{Attestation, Signature};
 pub type AttestationList = SszList<Attestation, VALIDATOR_REGISTRY_LIMIT>;
 
 /// The body of a block, containing payload data.
-#[derive(SszEncode, SszDecode, HashTreeRoot, Default)]
+#[derive(SszEncode, SszDecode, HashTreeRoot, Default, Debug)]
 pub struct BlockBody {
     /// Plain validator attestations carried in the block body.
     pub attestations: AttestationList,
 }
 
 /// The header of a block, containing metadata.
-#[derive(SszEncode, SszDecode, HashTreeRoot, Default)]
+#[derive(SszEncode, SszDecode, HashTreeRoot, Default, Debug)]
 pub struct BlockHeader {
     /// The slot in which the block was proposed.
     pub slot: u64,
 
-    /// The index of the validator that proposed the block.
+    /// The index  the validator that proposed the block.
     pub proposer_index: u64,
 
     /// The root of the parent block.
@@ -33,7 +33,7 @@ pub struct BlockHeader {
 }
 
 /// A complete block including header and body.
-#[derive(SszEncode, SszDecode, HashTreeRoot)]
+#[derive(SszEncode, SszDecode, HashTreeRoot, Debug)]
 pub struct Block {
     /// The slot in which the block was proposed.
     pub slot: u64,
@@ -52,7 +52,7 @@ pub struct Block {
 }
 
 /// Bundle containing a block and the proposer's attestation
-#[derive(SszEncode, SszDecode, HashTreeRoot)]
+#[derive(SszEncode, SszDecode, HashTreeRoot, Debug)]
 pub struct BlockWithAttestation {
     /// The proposed block message
     pub block: Block,
@@ -63,7 +63,7 @@ pub struct BlockWithAttestation {
 
 /// Envelope carrying a block, an attestation from proposer, and
 /// aggregated signatures.
-#[derive(SszEncode, SszDecode, HashTreeRoot)]
+#[derive(SszEncode, SszDecode, HashTreeRoot, Debug)]
 pub struct SignedBlockWithAttestation {
     /// The block plus an attestation from proposer being signed.
     pub message: BlockWithAttestation,

@@ -9,7 +9,7 @@ pub type AggregationBits = SszBitlist<VALIDATOR_REGISTRY_LIMIT>;
 pub type AggregatedSignatures = SszList<Signature, VALIDATOR_REGISTRY_LIMIT>;
 
 /// Attestation content describing the validator's observed chain view.
-#[derive(SszDecode, SszEncode, HashTreeRoot)]
+#[derive(SszDecode, SszEncode, HashTreeRoot, Debug)]
 pub struct AttestationData {
     /// The slot for which the attestation is made.
     pub slot: u64,
@@ -25,7 +25,7 @@ pub struct AttestationData {
 }
 
 /// Validator specific attestation wrapping shared attestation data.
-#[derive(SszDecode, SszEncode, HashTreeRoot)]
+#[derive(SszDecode, SszEncode, HashTreeRoot, Debug)]
 pub struct Attestation {
     /// The index of the validator making the attestation.
     pub validator_id: u64,
@@ -35,7 +35,7 @@ pub struct Attestation {
 }
 
 /// Validator attestation bundled with its signature.
-#[derive(SszDecode, SszEncode, HashTreeRoot)]
+#[derive(SszDecode, SszEncode, HashTreeRoot, Debug)]
 pub struct SignedAttestation {
     /// The attestation message signed by the validator.
     pub message: Attestation,
@@ -45,7 +45,7 @@ pub struct SignedAttestation {
 }
 
 /// Aggregated attestation consisting of participation bits and message.
-#[derive(SszDecode, SszEncode, HashTreeRoot)]
+#[derive(SszDecode, SszEncode, HashTreeRoot, Debug)]
 pub struct AggregatedAttestations {
     /// Bitfield indicating which validators participated in the aggregation.
     pub aggregation_bits: AggregationBits,
@@ -58,7 +58,7 @@ pub struct AggregatedAttestations {
 }
 
 /// Aggregated attestation bundled with aggregated signatures.
-#[derive(SszDecode, SszEncode, HashTreeRoot)]
+#[derive(SszDecode, SszEncode, HashTreeRoot, Debug)]
 pub struct SignedAggregatedAttestations {
     /// Aggregated attestation data.
     pub message: AggregatedAttestations,
