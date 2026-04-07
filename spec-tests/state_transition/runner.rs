@@ -1,7 +1,6 @@
 use shuri::containers::{Block, Config, State, Validator};
 
 use crate::state_transition::schema::StateTransitonTestSpec;
-use similar_asserts::assert_eq;
 
 pub fn run(spec: &StateTransitonTestSpec) {
     let mut state = State {
@@ -38,8 +37,11 @@ pub fn run(spec: &StateTransitonTestSpec) {
         .map(|block| state.state_transition(block))
         .collect::<Result<Vec<_>, _>>();
     if spec.expect_exception.is_some() {
-        assert_eq!(result.is_err(), true);
+        assert!(result.is_err());
+        return;
     }
+
+    result.unwrap();
 
     if let Some(post) = &spec.post {
         post.validate(&state);

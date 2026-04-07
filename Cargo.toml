@@ -13,10 +13,10 @@ thiserror = "2.0.18"
 [dev-dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-hex = "0.4"
 similar-asserts = "2.0"
+hex = "0.4"
 
 [[test]]
-name = "spectests"
-path = "spectests/main.rs"
+name = "spec-tests"
+path = "spec-tests/main.rs"
 harness = false
