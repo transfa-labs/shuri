@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: leanEthereum/leanSpec
-          ref: $LEAN_SPEC_COMMIT_HASH
+          ref: ${{env.LEAN_SPEC_COMMIT_HASH}}
           path: ./leanSpec
 
       - name: Install uv
