@@ -21,11 +21,7 @@ impl<const N: usize> Debug for HexBytes<N> {
 
 impl<const N: usize> PartialEq for HexBytes<N> {
     fn eq(&self, other: &Self) -> bool {
-        &self.0 == &other.0
-    }
-
-    fn ne(&self, other: &Self) -> bool {
-        &self.0 != &other.0
+        self.0 == other.0
     }
 }
 
@@ -43,10 +39,10 @@ impl<const N: usize> FromHex for HexBytes<N> {
 
 impl<const N: usize> ToHex for HexBytes<N> {
     fn encode_hex<T: std::iter::FromIterator<char>>(&self) -> T {
-        <[u8; N]>::encode_hex(&self)
+        <[u8; N]>::encode_hex(self)
     }
     fn encode_hex_upper<T: std::iter::FromIterator<char>>(&self) -> T {
-        <[u8; N]>::encode_hex_upper(&self)
+        <[u8; N]>::encode_hex_upper(self)
     }
 }
 
@@ -66,7 +62,7 @@ impl<const N: usize> Serialize for HexBytes<N> {
     where
         S: serde::Serializer,
     {
-        let encoded = Self::encode_hex::<String>(&self);
+        let encoded = Self::encode_hex::<String>(self);
         let encoded = format!("0x{}", encoded);
         serializer.serialize_str(&encoded)
     }

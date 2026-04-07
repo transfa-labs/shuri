@@ -34,27 +34,25 @@ fn collect_fixtures(path: &str) -> Result<Vec<Fixture>, std::io::Error> {
             let path = entry?.path();
             if path.is_dir() {
                 dirs.push(path);
-            } else {
-                if let Some(ext) = path.extension()
-                    && ext == "json"
-                {
-                    let suite = path
-                        .parent()
-                        .and_then(|f| f.file_name())
-                        .and_then(|f| f.to_str())
-                        .expect("path should have a parent dir");
-                    let case = path
-                        .file_stem()
-                        .and_then(|f| f.to_str())
-                        .expect("path should have a file name");
+            } else if let Some(ext) = path.extension()
+                && ext == "json"
+            {
+                let suite = path
+                    .parent()
+                    .and_then(|f| f.file_name())
+                    .and_then(|f| f.to_str())
+                    .expect("path should have a parent dir");
+                let case = path
+                    .file_stem()
+                    .and_then(|f| f.to_str())
+                    .expect("path should have a file name");
 
-                    let content = fs::read_to_string(&path)?;
-                    fixtures.push(Fixture {
-                        suite: suite.into(),
-                        case: case.into(),
-                        content: content.into(),
-                    });
-                }
+                let content = fs::read_to_string(&path)?;
+                fixtures.push(Fixture {
+                    suite: suite.into(),
+                    case: case.into(),
+                    content,
+                });
             }
         }
     }
@@ -68,7 +66,7 @@ fn run_single(runner: impl Fn()) -> Outcome {
             let msg = e
                 .downcast_ref::<String>()
                 .map(|s| s.as_str())
-                .or(e.downcast_ref::<&str>().map(|s| *s))
+                .or(e.downcast_ref::<&str>().copied())
                 .unwrap_or("test panicked");
             Outcome::Failure { msg: msg.into() }
         }
@@ -90,7 +88,7 @@ fn handle_fixture(fixture: Fixture) -> Test {
     let parsed: HashMap<String, serde_json::Value> =
         serde_json::from_str(&fixture.content).unwrap();
 
-    let value = parsed.values().nth(0).unwrap();
+    let value = parsed.values().next().unwrap();
     let info: InfoSpec = serde_json::from_value(value["_info"].clone()).unwrap();
 
     let outcome = match info.fixture_format {
@@ -118,7 +116,7 @@ fn run_test_case<'de, T: serde::Deserialize<'de>>(
 
     let test_case = spec
         .values()
-        .nth(0)
+        .next()
         .expect("spec should only have one test case");
 
     run_single(|| runner(test_case))

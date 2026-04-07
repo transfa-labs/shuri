@@ -17,12 +17,7 @@ impl<const N: usize> WrappedVec<HexBytes<N>> {
     pub fn to_sszlist<const M: usize>(
         &self,
     ) -> Result<SszList<[u8; N], M>, libssz_types::TypeError> {
-        SszList::try_from(
-            self.data
-                .iter()
-                .map(|h| h.0.clone())
-                .collect::<Vec<[u8; N]>>(),
-        )
+        SszList::try_from(self.data.iter().map(|h| h.0).collect::<Vec<[u8; N]>>())
     }
 }
 
