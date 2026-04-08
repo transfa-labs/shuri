@@ -2,9 +2,22 @@ use libssz_derive::{HashTreeRoot, SszDecode, SszEncode};
 use libssz_types::SszList;
 
 use crate::chain::config::VALIDATOR_REGISTRY_LIMIT;
+use crate::containers::State;
 use crate::containers::attestation::{Attestation, Signature};
 
 pub type AttestationList = SszList<Attestation, VALIDATOR_REGISTRY_LIMIT>;
+
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("number of signatures does not match number of attestations")]
+    SignatureCountMismatch,
+
+    #[error("validator index out of range")]
+    IndexOutOfRange,
+
+    #[error("attestation signature verification failed")]
+    SignatureVerificationFailure,
+}
 
 /// The body of a block, containing payload data.
 #[derive(SszEncode, SszDecode, HashTreeRoot, Default, Debug)]
@@ -70,4 +83,29 @@ pub struct SignedBlockWithAttestation {
 
     /// Aggregated signature payload for the block
     pub signature: SszList<Signature, VALIDATOR_REGISTRY_LIMIT>,
+}
+
+impl SignedBlockWithAttestation {
+    /// Verify all XMSS signatures in this signed block
+    pub fn verify_signatures(&self, parent_state: State) -> Result<(), Error> {
+        let all_attestations: Vec<_> = self
+            .message
+            .block
+            .body
+            .attestations
+            .iter()
+            .chain([&self.message.proposer_attestation])
+            .collect();
+        if self.signature.len() != all_attestations.len() {
+            return Err(Error::SignatureCountMismatch);
+        }
+
+        for (attestation, signature) in all_attestations.iter().zip(self.signature.iter()) {
+            if attestation.validator_id >= parent_state.validators.len() {
+                return Err(Error::IndexOutOfRange);
+            }
+            signature.v
+        }
+        Ok(())
+    }
 }
