@@ -8,7 +8,7 @@ use crate::{
         INTERVALS_PER_SLOT, JUSTIFICATION_LOOKBACK_SLOTS, SECONDS_PER_INTERVAL, SECONDS_PER_SLOT,
     },
     containers::{
-        Attestation, AttestationData, Block, Checkpoint, Config, Signature, SignedAttestation,
+        AttestationData, Block, Checkpoint, Config, Signature, SignedAttestation,
         SignedBlockWithAttestation, Slot, State, block, state,
     },
 };
@@ -69,6 +69,7 @@ pub enum Error {
 /// - an interval tick occurs (activating new attestations),
 /// - or when the head is recomputed
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct Store {
     /// Curren time in intervals since genesis.
     pub time: u64,
@@ -101,6 +102,7 @@ pub struct Store {
     pub latest_new_attestations: HashMap<u64, SignedAttestation>,
 }
 
+#[allow(dead_code)]
 impl Store {
     /// Initialize forkchoice store from an anchor state and block
     pub fn get_forckchoice_store(state: State, anchor_block: Block) -> Result<Self, Error> {
@@ -591,7 +593,7 @@ impl Store {
             let mut new_attestations = 0;
             for signed_attestation in self.latest_known_attestations.values() {
                 let data = &signed_attestation.message.data;
-                if self.blocks.get(&data.head.root).is_none() {
+                if !self.blocks.contains_key(&data.head.root) {
                     continue;
                 }
 
