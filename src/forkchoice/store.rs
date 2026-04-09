@@ -1,12 +1,15 @@
 use std::collections::HashMap;
 
 use libssz_merkle::{HashTreeRoot, Sha2Hasher};
+use libssz_types::SszList;
 
 use crate::{
-    chain::config::SECONDS_PER_SLOT,
+    chain::config::{
+        INTERVALS_PER_SLOT, JUSTIFICATION_LOOKBACK_SLOTS, SECONDS_PER_INTERVAL, SECONDS_PER_SLOT,
+    },
     containers::{
-        Block, Checkpoint, Config, SignedAttestation, SignedBlockWithAttestation, State, block,
-        state,
+        Attestation, AttestationData, Block, Checkpoint, Config, Signature, SignedAttestation,
+        SignedBlockWithAttestation, Slot, State, block, state,
     },
 };
 
@@ -35,6 +38,12 @@ pub enum Error {
 
     #[error("index out of range")]
     IndexOutOfRange,
+
+    #[error("validator {index} is not the proposer for slot {slot}")]
+    ValidatorIsNotProposer { index: u64, slot: u64 },
+
+    #[error("list is over capacity: {0}")]
+    OverCapacity(#[source] libssz_types::TypeError),
 
     #[error(transparent)]
     StateTransition(#[from] state::Error),
@@ -424,5 +433,199 @@ impl Store {
             &self.latest_known_attestations,
             0,
         );
+    }
+
+    /// Process pending attestations and update forkchoice head.
+    pub fn accept_new_attestations(&mut self) {
+        self.latest_known_attestations
+            .extend(self.latest_new_attestations.drain());
+        self.update_head();
+    }
+
+    /// Update the safe target for attestations
+    pub fn update_safe_target(&mut self) -> Result<(), Error> {
+        let head_state = self
+            .states
+            .get(&self.head)
+            .ok_or(Error::UnknownState { root: self.head })?;
+
+        let min_target_score = head_state.validators.len().strict_mul(2).div_ceil(3) as u64;
+        self.safe_target = self.compute_lmd_ghost_head(
+            self.latest_justified.root,
+            &self.latest_new_attestations,
+            min_target_score,
+        );
+        Ok(())
+    }
+
+    /// Advance store time by one interval and perform
+    /// interval-specifc actions:
+    /// - I0: Process attestations if proposal exists
+    /// - I1: Validator attesting period (no action)
+    /// - I2: Update safe target
+    /// - I3: Process accumulated attestations
+    pub fn tick_interval(&mut self, has_proposal: bool) -> Result<(), Error> {
+        self.time += 1;
+        let current_interval = self.time % SECONDS_PER_SLOT % INTERVALS_PER_SLOT;
+
+        if current_interval == 0 {
+            if has_proposal {
+                self.accept_new_attestations();
+            }
+        } else if current_interval == 2 {
+            self.update_safe_target()?;
+        } else if current_interval == 3 {
+            self.accept_new_attestations();
+        }
+
+        Ok(())
+    }
+
+    /// Advance forkchoice store time to given timestamp
+    pub fn on_tick(&mut self, time: u64, has_proposal: bool) -> Result<(), Error> {
+        let tick_interval_time = (time - self.config.genesis_time).div_euclid(SECONDS_PER_INTERVAL);
+
+        while self.time < tick_interval_time {
+            self.tick_interval(has_proposal && self.time + 1 == tick_interval_time)?;
+        }
+
+        Ok(())
+    }
+
+    /// Get the head for block proposal at given slot
+    pub fn get_proposal_head(&mut self, slot: u64) -> Result<[u8; 32], Error> {
+        self.on_tick(self.config.genesis_time + slot * SECONDS_PER_SLOT, true)?;
+        self.accept_new_attestations();
+
+        Ok(self.head)
+    }
+
+    /// Calculate target checkpoint for validator
+    pub fn get_attestation_target(&self) -> Result<Checkpoint, Error> {
+        let mut target_block_root = self.head;
+
+        for _ in 0..JUSTIFICATION_LOOKBACK_SLOTS {
+            let target_block = self.blocks.get(&target_block_root);
+            let safe_block = self.blocks.get(&self.safe_target);
+            if let (Some(target_block), Some(safe_block)) = (target_block, safe_block)
+                && target_block.slot > safe_block.slot
+            {
+                target_block_root = target_block.parent_root;
+            }
+        }
+
+        while let Some(target_block) = self.blocks.get(&target_block_root)
+            && !target_block
+                .slot
+                .is_justifiable_after(self.latest_finalized.slot)
+        {
+            target_block_root = target_block.parent_root;
+        }
+
+        let target_block = self
+            .blocks
+            .get(&target_block_root)
+            .ok_or(Error::UnknownBlock {
+                root: target_block_root,
+            })?;
+
+        Ok(Checkpoint {
+            root: target_block.hash_tree_root(&Sha2Hasher),
+            slot: target_block.slot,
+        })
+    }
+
+    /// Produce attestation data for the given slot
+    pub fn produce_attestation_data(&self, slot: u64) -> Result<AttestationData, Error> {
+        let head_block = self
+            .blocks
+            .get(&self.head)
+            .ok_or(Error::UnknownBlock { root: self.head })?;
+
+        Ok(AttestationData {
+            slot,
+            head: Checkpoint {
+                root: self.head,
+                slot: head_block.slot,
+            },
+            target: self.get_attestation_target()?,
+            source: self.latest_justified.clone(),
+        })
+    }
+
+    /// Produce a block and attestation signatures for the target slot
+    pub fn produce_block_with_signature(
+        &mut self,
+        slot: u64,
+        validator_index: u64,
+    ) -> Result<([u8; 32], Vec<Signature>), Error> {
+        let head_root = self.get_proposal_head(slot)?;
+        let head_state = self
+            .states
+            .get(&head_root)
+            .ok_or(Error::UnknownState { root: head_root })?;
+
+        if slot % head_state.validators.len() as u64 != validator_index {
+            return Err(Error::ValidatorIsNotProposer {
+                index: validator_index,
+                slot,
+            });
+        }
+
+        let mut signatures: Vec<Signature> = Vec::new();
+
+        let mut candidate_block = Block {
+            slot,
+            proposer_index: validator_index,
+            parent_root: head_root,
+            state_root: [0u8; 32],
+            body: block::BlockBody {
+                attestations: SszList::new(),
+            },
+        };
+        loop {
+            let mut post_state = head_state.clone();
+            post_state.process_slots(slot)?;
+            post_state.process_block(&candidate_block)?;
+
+            let mut new_attestations = 0;
+            for signed_attestation in self.latest_known_attestations.values() {
+                let data = &signed_attestation.message.data;
+                if self.blocks.get(&data.head.root).is_none() {
+                    continue;
+                }
+
+                if data.source != post_state.latest_justified {
+                    continue;
+                }
+
+                if !candidate_block
+                    .body
+                    .attestations
+                    .contains(&signed_attestation.message)
+                {
+                    candidate_block
+                        .body
+                        .attestations
+                        .push(signed_attestation.message.clone())
+                        .map_err(Error::OverCapacity)?;
+                    signatures.push(signed_attestation.signature.clone());
+                    new_attestations += 1;
+                }
+            }
+
+            if new_attestations == 0 {
+                break;
+            }
+        }
+
+        let mut final_post_state = head_state.clone();
+        final_post_state.process_block(&candidate_block)?;
+        candidate_block.state_root = final_post_state.hash_tree_root(&Sha2Hasher);
+        let block_hash = candidate_block.hash_tree_root(&Sha2Hasher);
+        self.blocks.insert(block_hash, candidate_block);
+        self.states.insert(block_hash, final_post_state);
+
+        Ok((block_hash, signatures))
     }
 }
