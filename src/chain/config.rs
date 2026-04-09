@@ -1,12 +1,10 @@
 /// Number of intervals per slot for forkchoice processing.
-#[allow(dead_code)]
 pub const INTERVALS_PER_SLOT: u64 = 4;
 
 /// The fixed duration of a single slot in seconds.
 pub const SECONDS_PER_SLOT: u64 = 4;
 
 /// Seconds per forkchoice processing interval.
-#[allow(dead_code)]
 pub const SECONDS_PER_INTERVAL: u64 = SECONDS_PER_SLOT / INTERVALS_PER_SLOT;
 
 /// The number of slots to lookback for justification.

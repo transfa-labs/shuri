@@ -1,3 +1,5 @@
+use std::num::TryFromIntError;
+
 use leansig::serialization::Serializable;
 use leansig::signature::SignatureScheme;
 
@@ -11,9 +13,13 @@ pub type Signature = <LeanSigScheme as SignatureScheme>::Signature;
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("decode error: {0}")]
-    DecodeError(String),
+    Decode(String),
+
     #[error("signature verification error")]
-    VerificationError,
+    SignatureVerification,
+
+    #[error("epoch exceeds u32")]
+    EpochOverflow(#[from] TryFromIntError),
 }
 
 pub fn verify_signature(
@@ -22,16 +28,10 @@ pub fn verify_signature(
     message: &[u8; 32],
     signature: &SigContainer,
 ) -> Result<(), Error> {
-    let pk = PublicKey::from_bytes(pubkey).map_err(|e| Error::DecodeError(format!("{:?}", e)))?;
-    let sig =
-        Signature::from_bytes(signature).map_err(|e| Error::DecodeError(format!("{:?}", e)))?;
-    if !LeanSigScheme::verify(
-        &pk,
-        epoch.try_into().expect("slot exceeds u32"),
-        message,
-        &sig,
-    ) {
-        return Err(Error::VerificationError);
+    let pk = PublicKey::from_bytes(pubkey).map_err(|e| Error::Decode(format!("{:?}", e)))?;
+    let sig = Signature::from_bytes(signature).map_err(|e| Error::Decode(format!("{:?}", e)))?;
+    if !LeanSigScheme::verify(&pk, epoch.try_into()?, message, &sig) {
+        return Err(Error::SignatureVerification);
     }
     Ok(())
 }

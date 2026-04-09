@@ -61,7 +61,7 @@ pub enum Error {
 /// - which checkpoints are justified and finalized,
 /// - which block is currently considered the head,
 /// - and, for each validator, their latest attestation that should
-///   the forkchoice.
+///   influence the forkchoice.
 ///
 /// The Store is updated whenever:
 /// - a new block is processed,
@@ -71,7 +71,7 @@ pub enum Error {
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct Store {
-    /// Curren time in intervals since genesis.
+    /// Current time in intervals since genesis.
     pub time: u64,
 
     /// Chain configuration parameters.
@@ -105,7 +105,7 @@ pub struct Store {
 #[allow(dead_code)]
 impl Store {
     /// Initialize forkchoice store from an anchor state and block
-    pub fn get_forckchoice_store(state: State, anchor_block: Block) -> Result<Self, Error> {
+    pub fn get_forkchoice_store(state: State, anchor_block: Block) -> Result<Self, Error> {
         if anchor_block.state_root != state.hash_tree_root(&Sha2Hasher) {
             return Err(Error::StateRootMismatch {
                 expected: anchor_block.state_root,
@@ -456,7 +456,7 @@ impl Store {
     }
 
     /// Advance store time by one interval and perform
-    /// interval-specifc actions:
+    /// interval-specific actions:
     /// - I0: Process attestations if proposal exists
     /// - I1: Validator attesting period (no action)
     /// - I2: Update safe target
