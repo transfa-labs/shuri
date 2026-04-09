@@ -274,20 +274,15 @@ impl Store {
         let mut post_state = parent_state.clone();
         post_state.state_transition(block)?;
 
-        self.latest_justified.slot =
-            if post_state.latest_justified.slot > self.latest_justified.slot {
-                post_state.latest_justified.slot
-            } else {
-                self.latest_justified.slot
-            };
-        self.latest_finalized.slot =
-            if post_state.latest_finalized.slot > self.latest_finalized.slot {
-                post_state.latest_finalized.slot
-            } else {
-                self.latest_finalized.slot
-            };
+        if post_state.latest_justified.slot > self.latest_justified.slot {
+            self.latest_justified = post_state.latest_justified.clone();
+        };
 
-        let block_root = block.parent_root;
+        if post_state.latest_finalized.slot > self.latest_finalized.slot {
+            self.latest_finalized = post_state.latest_finalized.clone();
+        };
+
+        let block_root = block.hash_tree_root(&Sha2Hasher);
         self.states
             .extend(HashMap::from([(block_root, post_state)]));
 
@@ -622,6 +617,7 @@ impl Store {
         }
 
         let mut final_post_state = head_state.clone();
+        final_post_state.process_slots(slot)?;
         final_post_state.process_block(&candidate_block)?;
         candidate_block.state_root = final_post_state.hash_tree_root(&Sha2Hasher);
         let block_hash = candidate_block.hash_tree_root(&Sha2Hasher);
