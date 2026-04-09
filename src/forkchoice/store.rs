@@ -4,7 +4,10 @@ use libssz_merkle::{HashTreeRoot, Sha2Hasher};
 
 use crate::{
     chain::config::SECONDS_PER_SLOT,
-    containers::{Block, Checkpoint, Config, SignedAttestation, SignedBlockWithAttestation, State},
+    containers::{
+        Block, Checkpoint, Config, SignedAttestation, SignedBlockWithAttestation, State, block,
+        state,
+    },
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -29,6 +32,15 @@ pub enum Error {
 
     #[error("attestation too far in future")]
     TooFarInFuture { slot: u64 },
+
+    #[error("index out of range")]
+    IndexOutOfRange,
+
+    #[error(transparent)]
+    StateTransition(#[from] state::Error),
+
+    #[error(transparent)]
+    SignatureVerification(#[from] block::Error),
 }
 
 /// Forkchoice store tracking chain state and validator attestation
@@ -221,7 +233,7 @@ impl Store {
         Ok(())
     }
 
-    /// Process a new block and update teh forkchoice state.
+    /// Process a new block and update the forkchoice state.
     ///
     /// This method integrates a block into the forkchoice store by:
     /// 1. Validating the block's parent exists
@@ -231,7 +243,7 @@ impl Store {
     /// 5. Processing the proposer's attestation (as if gossiped)
     pub fn on_block(
         &mut self,
-        signed_block_with_attestations: &SignedBlockWithAttestation,
+        signed_block_with_attestations: SignedBlockWithAttestation,
     ) -> Result<(), Error> {
         let block = &signed_block_with_attestations.message.block;
 
@@ -245,8 +257,172 @@ impl Store {
             .ok_or(Error::UnknownState {
                 root: block.parent_root,
             })?;
-        let post_state = parent_state.state_transition(block)
+
+        signed_block_with_attestations.verify_signatures(parent_state)?;
+
+        let mut post_state = parent_state.clone();
+        post_state.state_transition(block)?;
+
+        self.latest_justified.slot =
+            if post_state.latest_justified.slot > self.latest_justified.slot {
+                post_state.latest_justified.slot
+            } else {
+                self.latest_justified.slot
+            };
+        self.latest_finalized.slot =
+            if post_state.latest_finalized.slot > self.latest_finalized.slot {
+                post_state.latest_finalized.slot
+            } else {
+                self.latest_finalized.slot
+            };
+
+        let block_root = block.parent_root;
+        self.states
+            .extend(HashMap::from([(block_root, post_state)]));
+
+        let signatures = signed_block_with_attestations.signature;
+        let proposer_attestation = signed_block_with_attestations.message.proposer_attestation;
+
+        self.blocks.extend(HashMap::from([(
+            block_root,
+            signed_block_with_attestations.message.block,
+        )]));
+
+        let attestations = {
+            let block = self.blocks.get(&block_root).expect("block inserted");
+            block.body.attestations.clone()
+        };
+        let attestation_count = attestations.len();
+        let proposer_signature = signatures
+            .get(attestation_count)
+            .ok_or(Error::IndexOutOfRange)?
+            .clone();
+
+        for (attestation, signature) in attestations.into_iter().zip(signatures.into_iter()) {
+            self.on_attestation(
+                SignedAttestation {
+                    message: attestation,
+                    signature,
+                },
+                true,
+            )?;
+        }
+
+        self.update_head();
+
+        self.on_attestation(
+            SignedAttestation {
+                message: proposer_attestation,
+                signature: proposer_signature,
+            },
+            false,
+        )?;
 
         Ok(())
+    }
+
+    /// Walk the block tree to the LMD GHOST rule.
+    ///
+    /// The walk starts from a chosen root.
+    /// At each fork, the child subtree with the highest weight
+    /// is taken. The process stops when a leaf is reached.
+    /// That leaf is the chosen head.
+    ///
+    /// Weights are derived from validator votes. When two branches
+    /// have equal weight, the one with the lexicographically larger
+    /// hash is chosen to break the tie.
+    fn compute_lmd_ghost_head(
+        &self,
+        start_root: [u8; 32],
+        attestations: &HashMap<u64, SignedAttestation>,
+        min_score: u64,
+    ) -> [u8; 32] {
+        // If the starting point is not defined, choose the
+        // earliest known block.
+        let start_root = if start_root == [0u8; 32] {
+            self.blocks
+                .iter()
+                .min_by_key(|(_, value)| value.slot)
+                .map(|(key, _)| key)
+                .expect("blocks should not be empty")
+        } else {
+            &start_root
+        };
+
+        let start_block = self
+            .blocks
+            .get(start_root)
+            .expect("start_root retrieved from blocks");
+
+        let mut weights: HashMap<[u8; 32], u64> = HashMap::new();
+
+        // Derive the weights.
+        //
+        // Weights are derived as follows:
+        // - Each validator contributes its full weight to its most
+        //   recent head vote.
+        // - The weight of that vote also flows to every ancestor of
+        //   the voted block.
+        // - The weight of a subtree is the sum of all contributions
+        //   inside it.
+        //
+        // For every vote, follow the chosen head upwards through
+        // its ancestors. Each visited block accumulates one unit
+        // of weight from that validator.
+        for attestation in attestations.values() {
+            let mut current_root = attestation.message.data.head.root;
+            while let Some(block) = self.blocks.get(&current_root)
+                && block.slot > start_block.slot
+            {
+                *weights.entry(current_root).or_default() += 1;
+                current_root = block.parent_root;
+            }
+        }
+
+        let mut children_map: HashMap<[u8; 32], Vec<[u8; 32]>> = HashMap::new();
+
+        for (root, block) in self.blocks.iter() {
+            // Skip blocks without parents (e.g. genesis or orphans)
+            if block.parent_root == [0u8; 32] {
+                continue;
+            }
+
+            // Prune branches early if they lack sufficient weight
+            if min_score > 0 && weights.get(root).is_some_and(|v| *v < min_score) {
+                continue;
+            }
+
+            children_map
+                .entry(block.parent_root)
+                .or_default()
+                .push(*root);
+        }
+
+        let mut head = start_root;
+
+        // Descend the tree, choosing the heaviest branch at every fork
+        while let Some(children) = children_map.get(head)
+            && !children.is_empty()
+        {
+            head = children
+                .iter()
+                .max_by_key(|x| (weights.get(*x).unwrap_or(&0), *x))
+                .expect("children is not empty");
+        }
+
+        *head
+    }
+
+    /// Compute updated store with new canonical head
+    ///
+    /// Selects canonical head by walking the tree from
+    /// the justified root, choosing the heaviest child
+    /// at each fork based on attestation weights.
+    pub fn update_head(&mut self) {
+        self.head = self.compute_lmd_ghost_head(
+            self.latest_justified.root,
+            &self.latest_known_attestations,
+            0,
+        );
     }
 }

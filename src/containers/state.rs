@@ -51,7 +51,7 @@ pub enum Error {
 }
 
 /// The main consensus state object.
-#[derive(SszEncode, SszDecode, HashTreeRoot, Debug)]
+#[derive(SszEncode, SszDecode, HashTreeRoot, Debug, Clone)]
 pub struct State {
     /// The chain's configuration parameters
     pub config: Config,

@@ -9,7 +9,7 @@ pub type AggregationBits = SszBitlist<VALIDATOR_REGISTRY_LIMIT>;
 pub type AggregatedSignatures = SszList<Signature, VALIDATOR_REGISTRY_LIMIT>;
 
 /// Attestation content describing the validator's observed chain view.
-#[derive(SszDecode, SszEncode, HashTreeRoot, Debug)]
+#[derive(SszDecode, SszEncode, HashTreeRoot, Debug, Clone)]
 pub struct AttestationData {
     /// The slot for which the attestation is made.
     pub slot: u64,
@@ -25,7 +25,7 @@ pub struct AttestationData {
 }
 
 /// Validator specific attestation wrapping shared attestation data.
-#[derive(SszDecode, SszEncode, HashTreeRoot, Debug)]
+#[derive(SszDecode, SszEncode, HashTreeRoot, Debug, Clone)]
 pub struct Attestation {
     /// The index of the validator making the attestation.
     pub validator_id: u64,

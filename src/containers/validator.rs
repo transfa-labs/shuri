@@ -1,9 +1,11 @@
 use libssz_derive::{HashTreeRoot, SszDecode, SszEncode};
 
-#[derive(SszEncode, SszDecode, HashTreeRoot, Debug)]
+pub type Pubkey = [u8; 52];
+
+#[derive(SszEncode, SszDecode, HashTreeRoot, Debug, Clone)]
 pub struct Validator {
     /// XMSS one-time signature public key
-    pub pubkey: [u8; 52],
+    pub pubkey: Pubkey,
 
     /// Validator index in the registry
     pub index: u64,
