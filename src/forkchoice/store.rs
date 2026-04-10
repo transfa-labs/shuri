@@ -399,7 +399,7 @@ impl Store {
             }
 
             // Prune branches early if they lack sufficient weight
-            if min_score > 0 && weights.get(root).is_some_and(|v| *v < min_score) {
+            if min_score > 0 && weights.get(root).copied().unwrap_or(0) < min_score {
                 continue;
             }
 
