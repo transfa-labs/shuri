@@ -211,6 +211,14 @@ impl Store {
             // On-chain attestation processing
             // These are historical attestations from other validators included
             // by the proposer.
+            //
+            // We update the validator's latest known attestation if there's no
+            // known attestations yet or the onchain attestation is more recent
+            // than the known one.
+            //
+            // We also remove the validator's latest new stage (pending)
+            // attestation if the onchain attestation is more recent because
+            // it supersedes the new stage attestation.
 
             let latest_known = self.latest_known_attestations.get(&validator_id);
             if latest_known.is_none_or(|v| v.message.data.slot < attestation_slot) {
@@ -249,7 +257,7 @@ impl Store {
     /// This method integrates a block into the forkchoice store by:
     /// 1. Validating the block's parent exists
     /// 2. Computing the post-state via the state transition function
-    /// 3. Processing attestations included in the block body (on-chain)
+    /// 3. Processing attestations included in the block body (onchain)
     /// 4. Updating the forkchoice head
     /// 5. Processing the proposer's attestation (as if gossiped)
     pub fn on_block(
@@ -283,16 +291,13 @@ impl Store {
         };
 
         let block_root = block.hash_tree_root(&Sha2Hasher);
-        self.states
-            .extend(HashMap::from([(block_root, post_state)]));
 
         let signatures = signed_block_with_attestations.signature;
         let proposer_attestation = signed_block_with_attestations.message.proposer_attestation;
 
-        self.blocks.extend(HashMap::from([(
-            block_root,
-            signed_block_with_attestations.message.block,
-        )]));
+        self.states.insert(block_root, post_state);
+        self.blocks
+            .insert(block_root, signed_block_with_attestations.message.block);
 
         let attestations = {
             let block = self.blocks.get(&block_root).expect("block inserted");
@@ -480,7 +485,9 @@ impl Store {
 
     /// Advance forkchoice store time to given timestamp
     pub fn on_tick(&mut self, time: u64, has_proposal: bool) -> Result<(), Error> {
-        let tick_interval_time = (time - self.config.genesis_time).div_euclid(SECONDS_PER_INTERVAL);
+        let tick_interval_time = time
+            .strict_sub(self.config.genesis_time)
+            .div_euclid(SECONDS_PER_INTERVAL);
 
         while self.time < tick_interval_time {
             self.tick_interval(has_proposal && self.time + 1 == tick_interval_time)?;
@@ -580,22 +587,34 @@ impl Store {
                 attestations: SszList::new(),
             },
         };
+        // Iteratively collect valid attestations using fixed-point algorithm.
+        //
+        // Adding attestations can change the post-state's latest_justified
+        // checkpoint, which may make additional attestations eligible.
+        // Continue until no new attestations can be added to the block,
+        // ensuring we include the maximal valid attestation set.
         loop {
+            // Apply state transition to get the post-block state
             let mut post_state = head_state.clone();
             post_state.process_slots(slot)?;
             post_state.process_block(&candidate_block)?;
 
+            // Find new valid attestations matching post-state justification
             let mut new_attestations = 0;
             for signed_attestation in self.latest_known_attestations.values() {
                 let data = &signed_attestation.message.data;
+
+                // Skip if target block is unknown in our store
                 if !self.blocks.contains_key(&data.head.root) {
                     continue;
                 }
 
+                // Skip if attestation source doesn't match post-state's latest justified
                 if data.source != post_state.latest_justified {
                     continue;
                 }
 
+                // Add attestation if not already included
                 if !candidate_block
                     .body
                     .attestations
@@ -611,6 +630,7 @@ impl Store {
                 }
             }
 
+            // Fixed point reached: no new attestations found
             if new_attestations == 0 {
                 break;
             }
