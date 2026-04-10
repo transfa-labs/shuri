@@ -1,10 +1,25 @@
 use libssz_derive::{HashTreeRoot, SszDecode, SszEncode};
+use libssz_merkle::{HashTreeRoot, Sha2Hasher};
 use libssz_types::SszList;
 
 use crate::chain::config::VALIDATOR_REGISTRY_LIMIT;
+use crate::containers::State;
 use crate::containers::attestation::{Attestation, Signature};
+use crate::crypto::xmss;
 
 pub type AttestationList = SszList<Attestation, VALIDATOR_REGISTRY_LIMIT>;
+
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("number of signatures does not match number of attestations")]
+    SignatureCountMismatch,
+
+    #[error("validator index out of range")]
+    IndexOutOfRange,
+
+    #[error("attestation signature verification failed")]
+    SignatureVerificationFailure(#[from] xmss::Error),
+}
 
 /// The body of a block, containing payload data.
 #[derive(SszEncode, SszDecode, HashTreeRoot, Default, Debug)]
@@ -14,7 +29,7 @@ pub struct BlockBody {
 }
 
 /// The header of a block, containing metadata.
-#[derive(SszEncode, SszDecode, HashTreeRoot, Default, Debug)]
+#[derive(SszEncode, SszDecode, HashTreeRoot, Default, Debug, Clone)]
 pub struct BlockHeader {
     /// The slot in which the block was proposed.
     pub slot: u64,
@@ -70,4 +85,36 @@ pub struct SignedBlockWithAttestation {
 
     /// Aggregated signature payload for the block
     pub signature: SszList<Signature, VALIDATOR_REGISTRY_LIMIT>,
+}
+
+impl SignedBlockWithAttestation {
+    /// Verify all XMSS signatures in this signed block
+    pub fn verify_signatures(&self, parent_state: &State) -> Result<(), Error> {
+        let all_attestations: Vec<_> = self
+            .message
+            .block
+            .body
+            .attestations
+            .iter()
+            .chain([&self.message.proposer_attestation])
+            .collect();
+        if self.signature.len() != all_attestations.len() {
+            return Err(Error::SignatureCountMismatch);
+        }
+
+        for (attestation, signature) in all_attestations.iter().zip(self.signature.iter()) {
+            let validator_id = attestation.validator_id as usize;
+            if validator_id >= parent_state.validators.len() {
+                return Err(Error::IndexOutOfRange);
+            }
+            let validator = &parent_state.validators[validator_id];
+            xmss::verify_signature(
+                &validator.pubkey,
+                attestation.data.slot,
+                &attestation.hash_tree_root(&Sha2Hasher),
+                signature,
+            )?;
+        }
+        Ok(())
+    }
 }
