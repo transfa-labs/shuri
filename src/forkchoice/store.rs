@@ -309,7 +309,7 @@ impl Store {
             .ok_or(Error::IndexOutOfRange)?
             .clone();
 
-        for (attestation, signature) in attestations.into_iter().zip(signatures.into_iter()) {
+        for (attestation, signature) in attestations.into_iter().zip(signatures) {
             self.on_attestation(
                 SignedAttestation {
                     message: attestation,
@@ -645,5 +645,249 @@ impl Store {
         self.states.insert(block_hash, final_post_state);
 
         Ok((block_hash, signatures))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use libssz_types::{SszBitlist, SszVector};
+
+    use crate::containers::{Attestation, BlockHeader, State, Validator, state::Validators};
+
+    use super::*;
+
+    fn prefixed_bytes(prefix: &str) -> [u8; 32] {
+        let mut bytes = [0u8; 32];
+        bytes[..prefix.len()].copy_from_slice(prefix.as_bytes());
+        bytes
+    }
+
+    fn sample_state() -> State {
+        let block_header = BlockHeader {
+            slot: 0,
+            proposer_index: 0,
+            parent_root: [0u8; 32],
+            state_root: prefixed_bytes("state"),
+            body_root: prefixed_bytes("body"),
+        };
+
+        let validators: Validators = SszList::try_from(
+            (0..10)
+                .map(|_| Validator {
+                    pubkey: [0u8; 52],
+                    index: 0,
+                })
+                .collect::<Vec<Validator>>(),
+        )
+        .unwrap();
+
+        State {
+            config: Config { genesis_time: 1000 },
+            slot: 0,
+            latest_block_header: block_header,
+            latest_justified: Checkpoint {
+                root: prefixed_bytes("genesis"),
+                slot: 0,
+            },
+            latest_finalized: Checkpoint {
+                root: prefixed_bytes("genesis"),
+                slot: 0,
+            },
+            historical_block_hashes: SszList::new(),
+            justified_slots: SszBitlist::new(),
+            justification_roots: SszList::new(),
+            justification_validators: SszBitlist::new(),
+            validators,
+        }
+    }
+
+    fn sample_store() -> Store {
+        let mut state = sample_state();
+        let genesis_block = Block {
+            slot: 0,
+            proposer_index: 0,
+            parent_root: [0u8; 32],
+            state_root: state.hash_tree_root(&Sha2Hasher),
+            body: block::BlockBody {
+                attestations: SszList::new(),
+            },
+        };
+        let genesis_hash = genesis_block.hash_tree_root(&Sha2Hasher);
+        let genesis_header = BlockHeader {
+            slot: genesis_block.slot,
+            proposer_index: genesis_block.proposer_index,
+            parent_root: genesis_block.parent_root,
+            state_root: genesis_block.state_root,
+            body_root: genesis_block.body.hash_tree_root(&Sha2Hasher),
+        };
+
+        let finalized = Checkpoint {
+            root: genesis_hash,
+            slot: 0,
+        };
+        state.latest_justified = finalized.clone();
+        state.latest_finalized = finalized.clone();
+        state.latest_block_header = genesis_header;
+
+        Store {
+            time: 100,
+            config: Config { genesis_time: 1000 },
+            head: genesis_hash,
+            safe_target: genesis_hash,
+            latest_justified: finalized.clone(),
+            latest_finalized: finalized.clone(),
+            blocks: HashMap::from([(genesis_hash, genesis_block)]),
+            states: HashMap::from([(genesis_hash, state)]),
+            latest_known_attestations: HashMap::new(),
+            latest_new_attestations: HashMap::new(),
+        }
+    }
+
+    fn build_signed_attestation(
+        validator_id: u64,
+        slot: u64,
+        head: Checkpoint,
+        source: Checkpoint,
+        target: Checkpoint,
+    ) -> SignedAttestation {
+        SignedAttestation {
+            message: Attestation {
+                validator_id,
+                data: AttestationData {
+                    slot,
+                    head,
+                    target,
+                    source,
+                },
+            },
+            signature: SszVector::try_from(vec![0u8; 3116]).unwrap(),
+        }
+    }
+
+    // --- Test validator block production
+
+    #[test]
+    fn test_produce_block_basic() {
+        let mut store = sample_store();
+        let (block_root, _signatures) = store.produce_block_with_signature(1, 1).unwrap();
+        let block = store.blocks.get(&block_root).unwrap();
+        assert_eq!(block_root, block.hash_tree_root(&Sha2Hasher));
+        assert_eq!(block.slot, 1);
+        assert_eq!(block.proposer_index, 1);
+        assert_eq!(block.parent_root, store.head);
+        assert_ne!(block.state_root, [0u8; 32]);
+        assert!(store.states.contains_key(&block_root));
+    }
+
+    #[test]
+    fn test_produce_block_unauthorized_proposer() {
+        let mut store = sample_store();
+        assert!(matches!(
+            store.produce_block_with_signature(1, 2),
+            Err(Error::ValidatorIsNotProposer { index: 2, slot: 1 })
+        ))
+    }
+
+    #[test]
+    fn test_produce_block_with_attestations() {
+        let mut store = sample_store();
+        let head_block = store.blocks.get(&store.head).unwrap();
+        store.latest_known_attestations.insert(
+            5,
+            build_signed_attestation(
+                5,
+                head_block.slot,
+                Checkpoint {
+                    root: store.head,
+                    slot: head_block.slot,
+                },
+                store.latest_justified.clone(),
+                store.get_attestation_target().unwrap(),
+            ),
+        );
+        store.latest_known_attestations.insert(
+            6,
+            build_signed_attestation(
+                6,
+                head_block.slot,
+                Checkpoint {
+                    root: store.head,
+                    slot: head_block.slot,
+                },
+                store.latest_justified.clone(),
+                store.get_attestation_target().unwrap(),
+            ),
+        );
+        let slot = 2;
+        let validator_idx = 2;
+
+        let (block_hash, _signatures) = store
+            .produce_block_with_signature(slot, validator_idx)
+            .unwrap();
+
+        let block = store.blocks.get(&block_hash).unwrap();
+        // Block should include attestations from available attestations
+        assert!(!block.body.attestations.is_empty());
+        assert_eq!(block.slot, slot);
+        assert_eq!(block.proposer_index, validator_idx);
+        assert_ne!(block.state_root, [0u8; 32]);
+    }
+
+    #[test]
+    fn test_produce_block_sequential_slots() {
+        let mut store = sample_store();
+        let (block1_hash, _sigs) = store.produce_block_with_signature(1, 1).unwrap();
+        let block1 = store.blocks.get(&block1_hash).unwrap();
+
+        // Verify first block is properly created
+        assert_eq!(block1.slot, 1);
+        assert_eq!(block1.proposer_index, 1);
+        assert!(store.states.contains_key(&block1_hash));
+
+        // Produce block for slot 2 (will build on genesis due to forkchoice)
+        let (block2_hash, _sigs) = store.produce_block_with_signature(2, 2).unwrap();
+        let block2 = store.blocks.get(&block2_hash).unwrap();
+        assert_eq!(block2.slot, 2);
+        assert_eq!(block2.proposer_index, 2);
+        assert!(store.blocks.contains_key(&store.head));
+    }
+
+    #[test]
+    fn test_produce_block_empty_attestations() {
+        let mut store = sample_store();
+        store.latest_known_attestations.clear();
+
+        let (block_hash, _sigs) = store.produce_block_with_signature(3, 3).unwrap();
+        let block = store.blocks.get(&block_hash).unwrap();
+
+        // Should produce valid block with empty attestations
+        assert_eq!(block.body.attestations.len(), 0);
+        assert_eq!(block.slot, 3);
+        assert_eq!(block.proposer_index, 3);
+        assert_ne!(block.state_root, [0u8; 32]);
+    }
+
+    #[test]
+    fn test_produce_block_consistency() {
+        let mut store = sample_store();
+        let head_block = store.blocks.get(&store.head).unwrap();
+        store.latest_known_attestations.insert(
+            7,
+            build_signed_attestation(
+                7,
+                head_block.slot,
+                Checkpoint {
+                    root: store.head,
+                    slot: head_block.slot,
+                },
+                store.latest_justified.clone(),
+                store.get_attestation_target().unwrap(),
+            ),
+        );
+
+        let (block_hash, _sigs) = store.produce_block_with_signature(4, 4).unwrap();
+        let block = store.blocks.get(&block_hash).unwrap();
+        let state = store.states.get(&block_hash).unwrap();
+        assert_eq!(state.hash_tree_root(&Sha2Hasher), block.state_root);
     }
 }

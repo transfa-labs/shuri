@@ -289,7 +289,7 @@ impl State {
 
         let (roots, votes): (Vec<[u8; 32]>, Vec<Vec<bool>>) = {
             let mut entries = justifications.into_iter().collect::<Vec<(_, _)>>();
-            entries.sort_by(|a, b| a.0.cmp(&b.0));
+            entries.sort_by_key(|a| a.0);
             entries.into_iter().unzip()
         };
 
